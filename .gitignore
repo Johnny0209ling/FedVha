@@ -1,0 +1,36 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Data and generated outputs
+data/
+log_/
+logs/
+nohup_logs/
+outputs/
+comparison_figures/
+*.log
+*.out
+*.pth
+*.pt
+*.ckpt
+
+# Notebooks / analysis outputs
+.ipynb_checkpoints/
+*_results/
+*_outputs/
+*.pdf
+*.png
+*.jpg
+*.jpeg
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
