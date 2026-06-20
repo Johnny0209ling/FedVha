@@ -8,8 +8,8 @@ Federated learning enables multiple clients to collaboratively train a shared mo
 
 ## Supported Experiments
 
-- Datasets: CIFAR-10, CIFAR-100, MNIST, SVHN, Tiny-ImageNet
-- Models: VGG16, LeNet, ResNet18
+- Datasets: CIFAR-10, MNIST, SVHN
+- Models: VGG16, LeNet
 - Algorithms: FedAvg, HyperFedAvg/FedVha, FedProx, FedLC, FedAWA
 - Hypernetwork ablations through `--hn_ablation`
 
@@ -40,12 +40,6 @@ SVHN with VGG16:
 
 ```bash
 python -u main.py --dataset svhn --model VGG16 --algorithm hyperfedavg --beta 0.1 --data_root ../../data --log_dir ./log_/svhn_vgg16_beta=0.1
-```
-
-Tiny-ImageNet with ResNet18:
-
-```bash
-python -u main.py --dataset tinyimagenet --model ResNet18 --algorithm hyperfedavg --beta 0.1 --data_root ../../data --server_val_per_class 50 --log_dir ./log_/tinyimagenet_resnet18_beta=0.1
 ```
 
 ## Notes

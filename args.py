@@ -15,7 +15,7 @@ def args_parser():
     )
     parser.add_argument(
         "--dataset",
-        choices=["cifar10", "cifar100", "mnist", "svhn", "tinyimagenet"],
+        choices=["cifar10", "mnist", "svhn"],
         default="cifar10",
     )
     parser.add_argument("--E", type=int, default=5, help="local epochs")
@@ -44,7 +44,7 @@ def args_parser():
 
     parser.add_argument(
         "--model",
-        choices=["VGG11", "VGG13", "VGG16", "VGG19", "LeNet", "ResNet18"],
+        choices=["VGG16", "LeNet"],
         default="VGG16",
     )
     parser.add_argument("--seed", type=int, default=2020)
@@ -127,13 +127,9 @@ def args_parser():
         parser.error("--checkpoint_interval cannot be negative")
     if args.dataset == "mnist" and args.model != "LeNet":
         parser.error("MNIST currently supports --model LeNet")
-    if args.dataset == "cifar100" and args.model in {"LeNet", "ResNet18"}:
-        parser.error("CIFAR-100 currently supports VGG models")
-    if args.dataset == "svhn" and args.model in {"LeNet", "ResNet18"}:
+    if args.dataset == "svhn" and args.model != "VGG16":
         parser.error("SVHN currently supports VGG models")
-    if args.dataset == "tinyimagenet" and args.model != "ResNet18":
-        parser.error("Tiny-ImageNet currently supports --model ResNet18")
-    if args.dataset == "cifar10" and args.model in {"LeNet", "ResNet18"}:
+    if args.dataset == "cifar10" and args.model != "VGG16":
         parser.error("CIFAR-10 currently supports VGG models")
     if args.algorithm == "hyperfedavg" and int(args.C * args.K) < 2:
         parser.error("HyperFedAvg needs at least two selected clients per round")

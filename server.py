@@ -18,10 +18,8 @@ except ImportError:
 from client import evaluate_batch, test, train
 from get_data import (
     build_federated_cifar10,
-    build_federated_cifar100,
     build_federated_mnist,
     build_federated_svhn,
-    build_federated_tinyimagenet,
 )
 from hypernetwork import AggregationHyperNetwork
 from model import build_model
@@ -64,12 +62,8 @@ class FedAvg:
         set_random_seed(args.seed)
         if args.dataset == "mnist":
             self.data = build_federated_mnist(args)
-        elif args.dataset == "cifar100":
-            self.data = build_federated_cifar100(args)
         elif args.dataset == "svhn":
             self.data = build_federated_svhn(args)
-        elif args.dataset == "tinyimagenet":
-            self.data = build_federated_tinyimagenet(args)
         else:
             self.data = build_federated_cifar10(args)
         if len(self.data.train_loaders) != args.K:

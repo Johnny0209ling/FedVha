@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import torch
-from PIL import Image
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
@@ -12,14 +11,10 @@ from torchvision import datasets, transforms
 
 CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
 CIFAR10_STD = (0.2023, 0.1994, 0.2010)
-CIFAR100_MEAN = (0.5071, 0.4867, 0.4408)
-CIFAR100_STD = (0.2675, 0.2565, 0.2761)
 MNIST_MEAN = (0.1307,)
 MNIST_STD = (0.3081,)
 SVHN_MEAN = (0.4377, 0.4438, 0.4728)
 SVHN_STD = (0.1980, 0.2010, 0.1970)
-TINYIMAGENET_MEAN = (0.4802, 0.4481, 0.3975)
-TINYIMAGENET_STD = (0.2302, 0.2265, 0.2262)
 NUM_CLASSES = 10
 
 
@@ -44,38 +39,6 @@ def seed_worker(worker_id):
     worker_seed = torch.initial_seed() % (2**32)
     np.random.seed(worker_seed)
     random.seed(worker_seed)
-
-
-class TinyImageNetValDataset(Dataset):
-    def __init__(self, root, class_to_idx, transform=None):
-        self.transform = transform
-        self.samples = []
-        ann_path = os.path.join(root, "val", "val_annotations.txt")
-        image_dir = os.path.join(root, "val", "images")
-        if not os.path.exists(ann_path):
-            raise FileNotFoundError(
-                f"Tiny-ImageNet validation annotations not found: {ann_path}"
-            )
-        with open(ann_path, "r", encoding="utf-8") as handle:
-            for line in handle:
-                parts = line.strip().split("\t")
-                if len(parts) < 2:
-                    continue
-                image_name, class_id = parts[0], parts[1]
-                if class_id in class_to_idx:
-                    self.samples.append(
-                        (os.path.join(image_dir, image_name), class_to_idx[class_id])
-                    )
-
-    def __len__(self):
-        return len(self.samples)
-
-    def __getitem__(self, index):
-        path, target = self.samples[index]
-        image = Image.open(path).convert("RGB")
-        if self.transform is not None:
-            image = self.transform(image)
-        return image, target
 
 
 def split_server_validation(labels, samples_per_class, rng, num_classes=NUM_CLASSES):
@@ -292,119 +255,6 @@ def build_federated_cifar10(args):
     )
 
 
-def build_federated_cifar100(args):
-    rng = np.random.default_rng(args.seed)
-    num_classes = 100
-
-    train_transform = transforms.Compose(
-        [
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD),
-        ]
-    )
-    eval_transform = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD),
-        ]
-    )
-
-    train_dataset = datasets.CIFAR100(
-        args.data_root,
-        train=True,
-        download=args.download,
-        transform=train_transform,
-    )
-    train_eval_dataset = datasets.CIFAR100(
-        args.data_root,
-        train=True,
-        download=False,
-        transform=eval_transform,
-    )
-    test_dataset = datasets.CIFAR100(
-        args.data_root,
-        train=False,
-        download=args.download,
-        transform=eval_transform,
-    )
-
-    labels = np.asarray(train_dataset.targets)
-    client_pool, server_val_indices = split_server_validation(
-        labels,
-        args.server_val_per_class,
-        rng,
-        num_classes=num_classes,
-    )
-    client_indices = build_dirichlet_partition(
-        labels,
-        client_pool,
-        args.K,
-        args.beta,
-        args.min_client_samples,
-        rng,
-        num_classes=num_classes,
-    )
-
-    train_loaders = []
-    for client_id in range(args.K):
-        subset = Subset(train_dataset, client_indices[client_id])
-        train_loaders.append(
-            make_loader(
-                subset,
-                args.B,
-                shuffle=True,
-                seed=args.seed + client_id,
-                args=args,
-            )
-        )
-
-    server_subset = Subset(train_eval_dataset, server_val_indices)
-    server_val_loader = make_loader(
-        server_subset,
-        args.val_batch_size,
-        shuffle=True,
-        seed=args.seed + 10000,
-        args=args,
-    )
-    server_val_eval_loader = make_loader(
-        server_subset,
-        args.val_batch_size,
-        shuffle=False,
-        seed=args.seed + 20000,
-        args=args,
-    )
-    test_loader = make_loader(
-        test_dataset,
-        args.test_batch_size,
-        shuffle=False,
-        seed=args.seed + 30000,
-        args=args,
-    )
-
-    return FederatedData(
-        train_loaders=train_loaders,
-        server_val_loader=server_val_loader,
-        server_val_eval_loader=server_val_eval_loader,
-        test_loader=test_loader,
-        client_features=compute_client_features(
-            client_indices,
-            labels,
-            num_classes=num_classes,
-        ),
-        client_class_counts=compute_client_class_counts(
-            client_indices,
-            labels,
-            num_classes=num_classes,
-        ),
-        num_classes=num_classes,
-        client_sizes=[len(client_indices[i]) for i in range(args.K)],
-        client_indices=client_indices,
-        server_val_indices=server_val_indices,
-    )
-
-
 def build_federated_svhn(args):
     rng = np.random.default_rng(args.seed)
 
@@ -506,18 +356,6 @@ def build_federated_svhn(args):
     )
 
 
-def resolve_tinyimagenet_root(data_root):
-    if os.path.isdir(os.path.join(data_root, "train")):
-        return data_root
-    nested_root = os.path.join(data_root, "tiny-imagenet-200")
-    if os.path.isdir(os.path.join(nested_root, "train")):
-        return nested_root
-    raise FileNotFoundError(
-        "Tiny-ImageNet root not found. Pass --data_root as the "
-        "tiny-imagenet-200 directory or its parent directory."
-    )
-
-
 def build_federated_mnist(args):
     rng = np.random.default_rng(args.seed)
     transform = transforms.Compose(
@@ -605,110 +443,6 @@ def build_federated_mnist(args):
         client_features=compute_client_features(client_indices, labels),
         client_class_counts=compute_client_class_counts(client_indices, labels),
         num_classes=NUM_CLASSES,
-        client_sizes=[len(client_indices[i]) for i in range(args.K)],
-        client_indices=client_indices,
-        server_val_indices=server_val_indices,
-    )
-
-
-def build_federated_tinyimagenet(args):
-    rng = np.random.default_rng(args.seed)
-    root = resolve_tinyimagenet_root(args.data_root)
-    train_dir = os.path.join(root, "train")
-
-    train_transform = transforms.Compose(
-        [
-            transforms.RandomCrop(64, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(TINYIMAGENET_MEAN, TINYIMAGENET_STD),
-        ]
-    )
-    eval_transform = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize(TINYIMAGENET_MEAN, TINYIMAGENET_STD),
-        ]
-    )
-
-    train_dataset = datasets.ImageFolder(train_dir, transform=train_transform)
-    train_eval_dataset = datasets.ImageFolder(train_dir, transform=eval_transform)
-    test_dataset = TinyImageNetValDataset(
-        root,
-        train_dataset.class_to_idx,
-        transform=eval_transform,
-    )
-
-    num_classes = len(train_dataset.classes)
-    labels = np.asarray([target for _, target in train_dataset.samples])
-    client_pool, server_val_indices = split_server_validation(
-        labels,
-        args.server_val_per_class,
-        rng,
-        num_classes=num_classes,
-    )
-    client_indices = build_dirichlet_partition(
-        labels,
-        client_pool,
-        args.K,
-        args.beta,
-        args.min_client_samples,
-        rng,
-        num_classes=num_classes,
-    )
-
-    train_loaders = []
-    for client_id in range(args.K):
-        subset = Subset(train_dataset, client_indices[client_id])
-        train_loaders.append(
-            make_loader(
-                subset,
-                args.B,
-                shuffle=True,
-                seed=args.seed + client_id,
-                args=args,
-            )
-        )
-
-    server_subset = Subset(train_eval_dataset, server_val_indices)
-    server_val_loader = make_loader(
-        server_subset,
-        args.val_batch_size,
-        shuffle=True,
-        seed=args.seed + 10000,
-        args=args,
-    )
-    server_val_eval_loader = make_loader(
-        server_subset,
-        args.val_batch_size,
-        shuffle=False,
-        seed=args.seed + 20000,
-        args=args,
-    )
-    test_loader = make_loader(
-        test_dataset,
-        args.test_batch_size,
-        shuffle=False,
-        seed=args.seed + 30000,
-        args=args,
-    )
-
-    return FederatedData(
-        train_loaders=train_loaders,
-        server_val_loader=server_val_loader,
-        server_val_eval_loader=server_val_eval_loader,
-        test_loader=test_loader,
-        client_features=compute_client_features(
-            client_indices,
-            labels,
-            num_classes=num_classes,
-        ),
-        client_class_counts=compute_client_class_counts(
-            client_indices,
-            labels,
-            num_classes=num_classes,
-        ),
-        num_classes=num_classes,
         client_sizes=[len(client_indices[i]) for i in range(args.K)],
         client_indices=client_indices,
         server_val_indices=server_val_indices,
