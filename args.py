@@ -5,13 +5,13 @@ import torch
 
 def args_parser():
     parser = argparse.ArgumentParser(
-        description="FedAvg and HyperFedAvg experiments"
+        description="FedVha federated learning experiments"
     )
 
     parser.add_argument(
         "--algorithm",
-        choices=["fedavg", "hyperfedavg", "fedprox", "fedlc", "fedawa"],
-        default="hyperfedavg",
+        choices=["fedavg", "fedvha", "fedprox", "fedlc", "fedawa"],
+        default="fedvha",
     )
     parser.add_argument(
         "--dataset",
@@ -86,7 +86,7 @@ def args_parser():
             "client_scalar",
         ],
         default="full",
-        help="HyperFedAvg ablation variant",
+        help="FedVha ablation variant",
     )
 
     parser.add_argument("--log_dir", default="./log_")
@@ -131,8 +131,8 @@ def args_parser():
         parser.error("SVHN currently supports VGG models")
     if args.dataset == "cifar10" and args.model != "VGG16":
         parser.error("CIFAR-10 currently supports VGG models")
-    if args.algorithm == "hyperfedavg" and int(args.C * args.K) < 2:
-        parser.error("HyperFedAvg needs at least two selected clients per round")
-    if args.hn_ablation != "full" and args.algorithm != "hyperfedavg":
-        parser.error("--hn_ablation variants are only available with --algorithm hyperfedavg")
+    if args.algorithm == "fedvha" and int(args.C * args.K) < 2:
+        parser.error("FedVha needs at least two selected clients per round")
+    if args.hn_ablation != "full" and args.algorithm != "fedvha":
+        parser.error("--hn_ablation variants are only available with --algorithm fedvha")
     return args

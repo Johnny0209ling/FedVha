@@ -51,7 +51,7 @@ def set_random_seed(seed):
 
 
 class FedAvg:
-    """Runs either sample-size FedAvg or validation-trained HyperFedAvg."""
+    """Runs either sample-size FedAvg or validation-trained FedVha."""
 
     def __init__(self, args):
         self.args = args
@@ -88,7 +88,7 @@ class FedAvg:
         self.client_scalar_logits = None
         self.hn_optimizer = None
         if (
-            args.algorithm == "hyperfedavg"
+            args.algorithm == "fedvha"
             and args.hn_ablation != "no_validation_feedback"
         ):
             if args.hn_ablation == "client_scalar":
@@ -133,8 +133,8 @@ class FedAvg:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.logger = self._create_logger(timestamp)
         clients_per_round = max(int(self.args.C * self.args.K), 1)
-        if self.args.algorithm == "hyperfedavg" and clients_per_round < 2:
-            raise ValueError("HyperFedAvg requires at least two clients per round")
+        if self.args.algorithm == "fedvha" and clients_per_round < 2:
+            raise ValueError("FedVha requires at least two clients per round")
 
         self.logger.info("=== Federated training configuration ===")
         self.logger.info(
@@ -192,7 +192,7 @@ class FedAvg:
                 self._uses_dynamic_features(),
                 ",".join(DYNAMIC_FEATURE_NAMES),
             )
-        elif self.args.algorithm == "hyperfedavg":
+        elif self.args.algorithm == "fedvha":
             self.logger.info(
                 "hn_ablation=%s uses fixed FedAvg-style sample aggregation",
                 self.args.hn_ablation,
@@ -608,7 +608,7 @@ class FedAvg:
         if self._uses_dynamic_features():
             features.append(self._build_dynamic_features(client_results))
         if not features:
-            raise RuntimeError("HyperFedAvg needs at least one feature group")
+            raise RuntimeError("FedVha needs at least one feature group")
         return torch.cat(features, dim=1)
 
     def _aggregation_logits(self, selected_clients, client_results):
