@@ -2,14 +2,7 @@ import torch
 import torch.nn.functional as F
 
 
-def fedlc_loss(logits, target, class_counts, tau):
-    stable_counts = class_counts.clamp_min(1e-12)
-    calibration = tau * torch.pow(stable_counts, -0.25)
-    calibration = calibration.to(device=logits.device, dtype=logits.dtype)
-    return F.cross_entropy(logits - calibration.unsqueeze(0), target.long())
-
-
-def train(args, model, train_loader, client_id=None, global_state=None, class_counts=None):
+def train(args, model, train_loader, client_id=None, global_state=None):
     model.train()
     if args.optimizer == "adam":
         optimizer = torch.optim.Adam(
@@ -45,9 +38,6 @@ def train(args, model, train_loader, client_id=None, global_state=None, class_co
             name: value.detach().to(args.device)
             for name, value in global_state.items()
         }
-    if args.algorithm == "fedlc" and class_counts is None:
-        raise RuntimeError("FedLC requires per-client class counts")
-
     for _ in range(args.E):
         for data, target in train_loader:
             data = data.to(args.device, non_blocking=args.pin_memory)
@@ -55,10 +45,7 @@ def train(args, model, train_loader, client_id=None, global_state=None, class_co
 
             optimizer.zero_grad(set_to_none=True)
             logits = model(data)
-            if args.algorithm == "fedlc":
-                loss = fedlc_loss(logits, target, class_counts, args.fedlc_tau)
-            else:
-                loss = F.cross_entropy(logits, target.long())
+            loss = F.cross_entropy(logits, target.long())
             if global_params is not None and args.mu > 0:
                 proximal_term = torch.zeros((), device=args.device)
                 for name, parameter in model.named_parameters():

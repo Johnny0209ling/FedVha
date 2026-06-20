@@ -10,7 +10,7 @@ Federated learning enables multiple clients to collaboratively train a shared mo
 
 - Datasets: CIFAR-10, MNIST, SVHN
 - Models: VGG16, LeNet
-- Algorithms: FedAvg, FedVha, FedProx, FedLC, FedAWA
+- Algorithms: FedAvg, FedVha, FedProx, FedAWA
 - Hypernetwork ablations through `--hn_ablation`
 
 ## Setup
@@ -23,20 +23,19 @@ pip install -r requirements.txt
 
 ## Example Commands
 
-CIFAR-10 with VGG16:
+FedVha on CIFAR-10 with VGG16:
 
 ```bash
-python -u main.py --dataset cifar10 --model VGG16 --algorithm fedavg --beta 0.1 --data_root ../../data --log_dir ./log_/cifar10_vgg16_beta=0.1
-python -u main.py --dataset cifar10 --model VGG16 --algorithm fedvha --beta 0.1 --data_root ../../data --log_dir ./log_/cifar10_vgg16_beta=0.1
+python -u main.py --dataset cifar10 --model VGG16 --algorithm fedvha --beta 0.1 --data_root ../../data --log_dir ./log_/cifar10_vgg16_beta=0.1_fedvha
 ```
 
-MNIST with LeNet:
+FedVha on MNIST with LeNet:
 
 ```bash
 python -u main.py --dataset mnist --model LeNet --algorithm fedvha --beta 0.1 --data_root ../../data --log_dir ./log_/mnist_lenet_beta=0.1
 ```
 
-SVHN with VGG16:
+FedVha on SVHN with VGG16:
 
 ```bash
 python -u main.py --dataset svhn --model VGG16 --algorithm fedvha --beta 0.1 --data_root ../../data --log_dir ./log_/svhn_vgg16_beta=0.1

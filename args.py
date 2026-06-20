@@ -10,7 +10,7 @@ def args_parser():
 
     parser.add_argument(
         "--algorithm",
-        choices=["fedavg", "fedvha", "fedprox", "fedlc", "fedawa"],
+        choices=["fedavg", "fedvha", "fedprox", "fedawa"],
         default="fedvha",
     )
     parser.add_argument(
@@ -32,7 +32,6 @@ def args_parser():
     parser.add_argument("--optimizer", choices=["sgd", "adam"], default="sgd")
     parser.add_argument("--momentum", type=float, default=0.9)
     parser.add_argument("--mu", type=float, default=0.01, help="FedProx proximal strength")
-    parser.add_argument("--fedlc_tau", type=float, default=1.0, help="FedLC calibration strength")
     parser.add_argument("--fedawa_server_epochs", type=int, default=1)
     parser.add_argument("--fedawa_lr", type=float, default=1e-3)
     parser.add_argument("--fedawa_optimizer", choices=["sgd", "adam"], default="adam")
@@ -105,8 +104,6 @@ def args_parser():
         parser.error("--beta must be positive")
     if args.mu < 0:
         parser.error("--mu cannot be negative")
-    if args.fedlc_tau < 0:
-        parser.error("--fedlc_tau cannot be negative")
     if args.fedawa_server_epochs <= 0:
         parser.error("--fedawa_server_epochs must be positive")
     if args.fedawa_lr <= 0:

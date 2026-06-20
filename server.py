@@ -156,8 +156,6 @@ class FedAvg:
         )
         if self.args.algorithm == "fedprox":
             self.logger.info("fedprox_mu=%g", self.args.mu)
-        if self.args.algorithm == "fedlc":
-            self.logger.info("fedlc_tau=%g", self.args.fedlc_tau)
         if self.args.algorithm == "fedawa":
             self.logger.info(
                 "fedawa_server_epochs=%d fedawa_lr=%g fedawa_optimizer=%s "
@@ -318,10 +316,6 @@ class FedAvg:
             train_kwargs = {"client_id": client_id}
             if self.args.algorithm == "fedprox":
                 train_kwargs["global_state"] = global_state_cpu
-            if self.args.algorithm == "fedlc":
-                train_kwargs["class_counts"] = self.data.client_class_counts[
-                    client_id
-                ].to(self.args.device)
             train_stats = train(
                 self.args,
                 self.client_model,
