@@ -51,7 +51,7 @@ def set_random_seed(seed):
 
 
 class FedAvg:
-    """Runs either sample-size FedAvg or validation-trained FedVha."""
+    """Runs either sample-size FedAvg or validation-trained FedVHA."""
 
     def __init__(self, args):
         self.args = args
@@ -134,7 +134,7 @@ class FedAvg:
         self.logger = self._create_logger(timestamp)
         clients_per_round = max(int(self.args.C * self.args.K), 1)
         if self.args.algorithm == "fedvha" and clients_per_round < 2:
-            raise ValueError("FedVha requires at least two clients per round")
+            raise ValueError("FedVHA requires at least two clients per round")
 
         self.logger.info("=== Federated training configuration ===")
         self.logger.info(
@@ -602,7 +602,7 @@ class FedAvg:
         if self._uses_dynamic_features():
             features.append(self._build_dynamic_features(client_results))
         if not features:
-            raise RuntimeError("FedVha needs at least one feature group")
+            raise RuntimeError("FedVHA needs at least one feature group")
         return torch.cat(features, dim=1)
 
     def _aggregation_logits(self, selected_clients, client_results):

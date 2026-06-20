@@ -5,7 +5,7 @@ import torch
 
 def args_parser():
     parser = argparse.ArgumentParser(
-        description="FedVha federated learning experiments"
+        description="FedVHA federated learning experiments"
     )
 
     parser.add_argument(
@@ -85,7 +85,7 @@ def args_parser():
             "client_scalar",
         ],
         default="full",
-        help="FedVha ablation variant",
+        help="FedVHA ablation variant",
     )
 
     parser.add_argument("--log_dir", default="./log_")
@@ -129,7 +129,7 @@ def args_parser():
     if args.dataset == "cifar10" and args.model != "VGG16":
         parser.error("CIFAR-10 currently supports VGG models")
     if args.algorithm == "fedvha" and int(args.C * args.K) < 2:
-        parser.error("FedVha needs at least two selected clients per round")
+        parser.error("FedVHA needs at least two selected clients per round")
     if args.hn_ablation != "full" and args.algorithm != "fedvha":
         parser.error("--hn_ablation variants are only available with --algorithm fedvha")
     return args
